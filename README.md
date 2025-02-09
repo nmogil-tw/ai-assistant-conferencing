@@ -1,52 +1,61 @@
 # Voice Channel Functions
 
-This directory contains Twilio Functions that handle voice calls and conference management for an automated customer service system.
+This directory contains Twilio Functions that handle voice calls and conference management for an automated customer service system with AI assistant and human escalation capabilities.
 
 ## Function Overview
 
-### 1. incoming-call-conference.js
-Handles the initial incoming call setup and configures the AI assistant:
-- Validates ASSISTANT_ID configuration
-- Connects caller to an AI assistant named "Alice"
-- Uses Deepgram for transcription
-- Uses Elevenlabs for text-to-speech with the "Jessica-flash_v2_5" voice
-- Provides a customized welcome greeting
+### Voice Channel Functions
 
-### 2. customer-dial-conference.js
+#### 1. assistant-call-conference.js
+Handles the AI assistant's participation in conference calls:
+- Manages the AI assistant's connection to conferences
+- Configures voice settings and behavior
+- Handles assistant-specific conference parameters
+
+#### 2. customer-dial-conference.js
 Manages conference call setup when a customer dials in:
 - Creates a new conference using the CallSid as identifier
-- Sets a 180-second time limit
+- Sets appropriate time limits
 - Configures conference parameters:
   - Records from start
   - Ends when initiator leaves
   - Labels participant as 'customer'
   - Monitors conference events through status callbacks
 
-### 3. conference-status-callback.js
+#### 3. conference-status-callback.js
 Handles conference status events and participant management:
-- Receives callbacks for conference events (start, join)
-- Automatically adds AI assistant when customer joins
-- Manages different logic for 'customer' and 'agent' participants
+- Processes conference event callbacks (start, join, leave)
+- Manages participant labels ('customer', 'agent')
+- Handles dynamic addition of AI assistant
 - Tracks call details and participant information
+- Manages conference state and routing
+
+### Tools
+
+#### escalate-to-human-conference.js
+Manages the escalation process from AI to human agent:
+- Extracts session information from call headers
+- Identifies active customer conferences
+- Manages the transition from AI to human agent
+- Handles conference participant updates
+- Ensures smooth handover process
 
 ## System Flow
 
-1. Customer calls in → `incoming-call-conference.js`
-2. Call is placed into conference → `customer-dial-conference.js`
-3. System adds AI agent to conference → `conference-status-callback.js`
-4. Interaction is recorded and monitored through status callbacks
+1. Customer initiates call
+2. Call is placed into conference via `customer-dial-conference.js`
+3. AI assistant joins via `assistant-call-conference.js`
+4. Conference events managed by `conference-status-callback.js`
+5. Optional escalation to human agent via `escalate-to-human-conference.js`
 
 ## Configuration Requirements
 
-- `ASSISTANT_ID`: Required for AI assistant configuration
-- `FUNCTIONS_DOMAIN`: Required for status callback URLs
-- AI Assistant Phone Number: +18887941151
-
-## Voice Settings
-
-- Transcription Provider: Deepgram
-- TTS Provider: Elevenlabs
-- Voice: Jessica-flash_v2_5
+Required environment variables:
+- `TWILIO_ACCOUNT_SID`: Your Twilio Account SID
+- `TWILIO_AUTH_TOKEN`: Your Twilio Auth Token
+- `ASSISTANT_ID`: Your AI Assistant ID
+- `FUNCTIONS_DOMAIN`: Your Twilio Functions domain
+- `AI_ASSISTANT_PHONE_NUMBER`: Phone number for AI assistant
 
 ## Deployment Instructions
 
@@ -60,11 +69,7 @@ Handles conference status events and participant management:
    ```bash
    cp .env.example .env
    ```
-2. Fill in your environment variables in the `.env` file:
-   - `TWILIO_ACCOUNT_SID`: Your Twilio Account SID
-   - `TWILIO_AUTH_TOKEN`: Your Twilio Auth Token
-   - `ASSISTANT_ID`: Your AI Assistant ID
-   - `FUNCTIONS_DOMAIN`: Your Twilio Functions domain (optional)
+2. Fill in your environment variables in the `.env` file with the required values listed above
 
 ### Installing Dependencies
 Install the required dependencies by running:
@@ -87,4 +92,4 @@ There are two ways to deploy the functions:
    ```
    Use this for subsequent deployments to update existing functions.
 
-After successful deployment, the Functions domain URL will be displayed in the console. You can use this URL to configure your Twilio phone numbers or other services that need to interact with these functions.
+After successful deployment, the Functions domain URL will be displayed in the console. Use this URL to configure your Twilio phone numbers or other services that need to interact with these functions.
