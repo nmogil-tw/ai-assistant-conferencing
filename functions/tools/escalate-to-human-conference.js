@@ -32,7 +32,7 @@ exports.handler = async function(context, event, callback) {
         console.log('Session Call Conference SID:', sessionCall.conferenceSid);
         console.log('Session Call Status:', sessionCall.status);
 
-        // Fetch all recent calls from the customer's phone number, including completed ones
+        // Fetch all in-progress calls from the customer's phone number
         const calls = await client.calls.list({
             from: customerPhoneNumber,
             status: 'in-progress',
