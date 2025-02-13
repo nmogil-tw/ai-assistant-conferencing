@@ -1,38 +1,31 @@
 // This is the main function that will be executed when the handler is triggered
 exports.handler = async function(context, event, callback) {
     // Create a new instance of Twilio's VoiceResponse. This will be used to generate TwiML, which is a set of instructions that tell Twilio what to do when you receive an incoming call or SMS.
-    let twiml = new Twilio.twiml.VoiceResponse();
+    const twiml = new Twilio.twiml.VoiceResponse();
     console.log('twiml:', twiml);
 
     // Get the Twilio client from the context. This client allows you to interact with the Twilio API.
     const client = context.getTwilioClient();
     console.log('client:', client);
 
-    // Get the ConferenceSid from the event. This is the unique identifier of the conference call.
-    const conferenceSid = event.ConferenceSid;
+    // Get the ConferenceSid, ParticipantLabel, CallSid, and fullToken from the event.
+    const { ConferenceSid: conferenceSid, ParticipantLabel: participantLabel, CallSid: callSid, fullToken: callToken } = event;
     console.log('conferenceSid:', conferenceSid);
-    
-    // Get the full token from the URL parameter instead of FriendlyName
-    const callToken = event.fullToken;
+    console.log('participantLabel:', participantLabel);
+    console.log('callSid:', callSid);
     console.log('callToken from URL:', callToken);
 
     // Start of try block. If any error occurs within this block, it will be caught and handled by the catch block.
     try {
         // Check if the participant label is 'customer'
-        if (event.ParticipantLabel === 'customer') {
+        if (participantLabel === 'customer') {
             console.log('ParticipantLabel is customer');
             
-            // Log the entire event object to inspect available properties
-            console.log('Event object:', event);
-
             // Check if CallToken exists
             if (!callToken) {
                 console.warn('No CallToken found in event object');
             }
             
-            const callSid = event.CallSid;
-            console.log('callSid:', callSid);
-
             // Fetch the details of the call using the callSid
             const callDetails = await client.calls(callSid).fetch();
             const customerPhoneNumber = callDetails.from;
@@ -46,25 +39,18 @@ exports.handler = async function(context, event, callback) {
                 to: agentNumber,
                 label: 'agent',
                 statusCallback: `https://${context.FUNCTIONS_DOMAIN}/channels/voice/conference-status-callback`,
+                ...(callToken && { callToken })
             };
 
-            // Add the full CallToken if it exists
-            if (callToken) {
-                participantOptions.callToken = callToken;
-                console.log('Using full CallToken from URL:', callToken);
-            }
-
             // Create a new participant in the conference call
-            const agent = await client.conferences(conferenceSid).participants.create(participantOptions);
-            console.log('agent created:', agent);
+            await client.conferences(conferenceSid).participants.create(participantOptions);
         } 
         // Check if the participant label is 'agent'
-        else if (event.ParticipantLabel === 'agent') {
+        else if (participantLabel === 'agent') {
             console.log('ParticipantLabel is agent');
 
             // Get the CallSid of the agent from the event
-            const agentCallSid = event.CallSid;
-            console.log('agentCallSid:', agentCallSid);
+            console.log('agentCallSid:', callSid);
         }
 
         // End the function and return the generated TwiML
